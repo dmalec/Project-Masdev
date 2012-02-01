@@ -1,0 +1,11 @@
+Project Masdev
+==============
+Project Masdev captures a series of steps in creating an arduino monitored
+and controlled vivarium as well as the cumulative sketch that results from
+the individual additions of functionality.  Hopefully, others can use it
+in their own projects.
+
+Why Project Masdev
+------------------
+This project got its start when I aquired a Masdevallia orchid, requiring
+a greater attention to humidity and temperature than my other orchids.
