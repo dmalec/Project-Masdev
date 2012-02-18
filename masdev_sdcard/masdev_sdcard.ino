@@ -59,6 +59,7 @@
 
 #define DEFAULT_SD_CARD_CS_PIN 10
 #define ACTUAL_SD_CARD_CS_PIN 10
+#define DATA_FILE_NAME "vivarium.txt"
 
 // -------------------------------------------------------------------------------
 // Globals
@@ -158,29 +159,48 @@ void print_humidity(float humidity) {
   lcd.print('%');
 }
 
+//! Log the timestamp, temperature, & humidity to a data file.
+/*!
+  Log the current data to a datafile in a format ready for RRDTool.
+  Data will be logged as:
+  t0:h0 <timestamp>:<temperature>:<humidity>
+  
+  This can then be imported by running the following on each line:
+  rrdtool update <rrdfile>
+  
+  \param humidity the humidity
+*/
+void log_rrd_data(DateTime *now, float temperature, float humidity) {
+  char buffer[10];
+  File dataFile = SD.open(DATA_FILE_NAME, FILE_WRITE);
+
+  dataFile.print("t0:h0 ");
+  dataFile.print(now->unixtime());
+
+  dataFile.print(':');
+  dtostrf(temperature, 3, 2, buffer);
+  dataFile.print(String(buffer));
+
+  dataFile.print(':');
+  dtostrf(humidity, 3, 2, buffer);
+  dataFile.println(String(buffer));
+
+  dataFile.close();
+}
+
+
 //! Main execution loop.
 void loop() {
   DateTime now = rtc.now();
   float humidity = dht.readHumidity();
-  float temp = dht.readTemperature() * 1.8 + 32.0;
+  float temperature = dht.readTemperature() * 1.8 + 32.0;
 
   print_date_time(&now);
   print_humidity(humidity);
-  print_temperature(temp);
+  print_temperature(temperature);
 
   if (sd_available && now.minute() != last_log_minute) {
-    char buffer[10];
-
-    File dataFile = SD.open("humidity.txt", FILE_WRITE);
-    dtostrf(humidity, 3, 2, buffer);
-    dataFile.println(String(now.unixtime()) + ':' + String(buffer));
-    dataFile.close();
-
-    dataFile = SD.open("temp.txt", FILE_WRITE);
-    dtostrf(temp, 3, 2, buffer);
-    dataFile.println(String(now.unixtime()) + ':' + String(buffer));
-    dataFile.close();
-    
+    log_rrd_data(&now, temperature, humidity);
     last_log_minute = now.minute();
   }
   
