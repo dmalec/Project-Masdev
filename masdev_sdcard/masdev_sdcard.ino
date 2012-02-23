@@ -90,14 +90,17 @@ void setup() {
     rtc.adjust(DateTime(__DATE__, __TIME__));
   }
   
-  // initialize the SD Card if possible; if not,
-  // set a flag.
+  // Initialize the SD Card if possible and set a
+  // flag to track success.
   pinMode(DEFAULT_SD_CARD_CS_PIN, OUTPUT);
   if (SD.begin(ACTUAL_SD_CARD_CS_PIN)) {
     sd_available = true;
   } else {
     sd_available = false;
   }
+
+  // Initialize a variable to track if anything
+  // has been logged this minute.
   last_log_minute = 0;
 }
 
@@ -165,8 +168,7 @@ void print_humidity(float humidity) {
   Data will be logged as:
   t0:h0 <timestamp>:<temperature>:<humidity>
   
-  This can then be imported by running the following on each line:
-  rrdtool update <rrdfile>
+  Time will have to be adjusted for locale before importing to RRD.
   
   \param humidity the humidity
 */
@@ -199,6 +201,8 @@ void loop() {
   print_humidity(humidity);
   print_temperature(temperature);
 
+  // If the SD card is available, and we haven't logged anything
+  // yet this minute, log data to the SD card and update the minute.
   if (sd_available && now.minute() != last_log_minute) {
     log_rrd_data(&now, temperature, humidity);
     last_log_minute = now.minute();
